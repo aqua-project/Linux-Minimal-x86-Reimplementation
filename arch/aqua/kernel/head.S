@@ -24,13 +24,48 @@
  */
 #include <linux/init.h>
 #include <linux/linkage.h>
+#include <asm/page.h>
+#include <asm/mmu.h>
+#include <asm/thread_info.h>
 
 #include <asm/asm-offsets.h>
 
 	.extern start_kernel
 	.global init_thread_union
 	.global	kernelsp
+.p2align 2
+.text
+.globl multiboot_header
+multiboot_header:
+  #define magic 0x1badb002
+  #define flags 0
+  .long magic
+  .long flags
+  .long (-magic-flags)
+
+
+.globl _start
+_start = pa(entry)
 
 __INIT
-ENTRY(_stext)
-	nop
+ENTRY(entry)
+    # Turn on page size extension for 4Mbyte pages
+    movl    %cr4, %eax
+    orl     $(CR4_PSE), %eax
+    movl    %eax, %cr4
+    # Set page directory
+    movl    $(pa(entrypgdir)), %eax
+    movl    %eax, %cr3
+    # Turn on paging.
+    movl    %cr0, %eax
+    orl     $(CR0_PG|CR0_WP), %eax
+    movl    %eax, %cr0
+
+    # Set up the stack pointer.
+    movl    $init_thread_union, %esp
+    addl    $(THREAD_SIZE), %esp
+    movl    $__current_thread_info, %eax
+    movl    $init_thread_union, 0(%eax)
+
+    jmp *(start_kernel)
+    

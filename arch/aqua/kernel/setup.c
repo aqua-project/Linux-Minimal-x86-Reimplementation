@@ -32,15 +32,15 @@
 #include <linux/screen_info.h>
 
 #include <asm-generic/sections.h>
+#include <asm/page.h>
+#include <asm/pgtable.h>
+#include <asm/mmu.h>
 #include <asm/setup.h>
+
+struct thread_info *__current_thread_info;
 
 struct screen_info screen_info;
 unsigned long kernelsp;
-
-static char command_line[COMMAND_LINE_SIZE];
-static struct resource code_resource = { .name = "Kernel code",};
-static struct resource data_resource = { .name = "Kernel data",};
-
 
 void __init setup_arch(char **cmdline_p)
 {
@@ -78,3 +78,11 @@ static int __init topology_init(void)
 }
 
 subsys_initcall(topology_init);
+
+__attribute__((__aligned__(PAGE_SIZE)))
+uint32_t entrypgdir[1024] = {
+  // Map VA's [0, 4MB) to PA's [0, 4MB)
+  [0] = (0) | PTE_P | PTE_W | PTE_PS,
+  // Map VA's [KERNBASE, KERNBASE+4MB) to PA's [0, 4MB)
+  [KERNBASE>>PGDIR_SHIFT] = (0) | PTE_P | PTE_W | PTE_PS,
+};

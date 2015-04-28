@@ -62,10 +62,7 @@ struct thread_info {
 #define init_thread_info	(init_thread_union.thread_info)
 #define init_stack		(init_thread_union.stack)
 
-//TODO: original code is
-// register struct thread_info *__current_thread_info __asm__("r28");
-/* How to get the thread information struct from C. */
-static struct thread_info *__current_thread_info;
+extern struct thread_info *__current_thread_info;
 #define current_thread_info()	__current_thread_info
 
 #endif /* !__ASSEMBLY__ */

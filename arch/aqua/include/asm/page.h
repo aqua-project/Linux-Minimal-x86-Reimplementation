@@ -9,6 +9,15 @@
 #define PAGE_SIZE	(_AC(1,UL) << PAGE_SHIFT)
 #define PAGE_MASK	(~(PAGE_SIZE-1))
 
+/*
+ * PAGE_OFFSET -- the first address of the first page of memory. When not
+ * using MMU this corresponds to the first free page in physical memory (aligned
+ * on a page boundary).
+ */
+#define PAGE_OFFSET		(0x80000000)
+#define pa(x)                   ((x) - PAGE_OFFSET)
+#define KERNBASE                PAGE_OFFSET
+
 #ifdef __KERNEL__
 
 #ifndef __ASSEMBLY__
@@ -22,13 +31,6 @@
 
 /* align addr on a size boundary - adjust address up if needed */
 #define _ALIGN(addr, size)	_ALIGN_UP(addr, size)
-
-/*
- * PAGE_OFFSET -- the first address of the first page of memory. When not
- * using MMU this corresponds to the first free page in physical memory (aligned
- * on a page boundary).
- */
-#define PAGE_OFFSET		(0xA0000000UL)
 
 #define clear_page(pgaddr)			memset((pgaddr), 0, PAGE_SIZE)
 #define copy_page(to, from)			memcpy((to), (from), PAGE_SIZE)

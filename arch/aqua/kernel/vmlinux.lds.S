@@ -27,8 +27,9 @@
 #include <asm/thread_info.h>
 #include <asm/page.h>
 
+OUTPUT_FORMAT("elf32-i386", "elf32-i386", "elf32-i386")
 OUTPUT_ARCH(i386)
-ENTRY(_stext)
+ENTRY(_start)
 
 jiffies = jiffies_64;
 
@@ -38,13 +39,15 @@ SECTIONS
 	/* read-only */
 	.text : {
 		_text = .;	/* Text and read-only data */
+		. = ALIGN(8);
+		_stext = .;
 		TEXT_TEXT
 		SCHED_TEXT
 		LOCK_TEXT
 		KPROBES_TEXT
 		*(.text.*)
 		*(.fixup)
-		. = ALIGN (4) ;
+		. = ALIGN (8) ;
 		_etext = .;	/* End of text section */
 	}
 

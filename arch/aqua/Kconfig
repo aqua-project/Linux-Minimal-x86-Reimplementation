@@ -59,7 +59,7 @@ source "mm/Kconfig"
 
 config MEMORY_START
 	hex
-	default	0xa0000000
+	default	0x80000000
 
 source "kernel/Kconfig.hz"
 source "kernel/Kconfig.preempt"
