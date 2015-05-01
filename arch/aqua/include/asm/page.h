@@ -15,6 +15,7 @@
  * on a page boundary).
  */
 #define PAGE_OFFSET		(0x80000000)
+#define LOAD_OFFSET             (0x80000000)
 #define pa(x)                   ((x) - PAGE_OFFSET)
 #define KERNBASE                PAGE_OFFSET
 

@@ -23,9 +23,9 @@
  * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <asm-generic/vmlinux.lds.h>
 #include <asm/thread_info.h>
 #include <asm/page.h>
+#include <asm-generic/vmlinux.lds.h>
 
 OUTPUT_FORMAT("elf32-i386", "elf32-i386", "elf32-i386")
 OUTPUT_ARCH(i386)
@@ -35,9 +35,9 @@ jiffies = jiffies_64;
 
 SECTIONS
 {
-	. = CONFIG_MEMORY_START + 0x2000;
+	. = CONFIG_MEMORY_START + 0x100000;
 	/* read-only */
-	.text : {
+	.text : AT(0x100000) {
 		_text = .;	/* Text and read-only data */
 		. = ALIGN(8);
 		_stext = .;

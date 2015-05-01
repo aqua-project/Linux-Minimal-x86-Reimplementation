@@ -67,5 +67,6 @@ ENTRY(entry)
     movl    $__current_thread_info, %eax
     movl    $init_thread_union, 0(%eax)
 
-    jmp *(start_kernel)
+    movl    $start_kernel, %eax
+    jmp     %eax
     
