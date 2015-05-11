@@ -72,13 +72,6 @@ const struct seq_operations cpuinfo_op = {
 	.show	= show_cpuinfo,
 };
 
-static int __init topology_init(void)
-{
-	return 0;
-}
-
-subsys_initcall(topology_init);
-
 __attribute__((__aligned__(PAGE_SIZE)))
 uint32_t entrypgdir[1024] = {
   // Map VA's [0, 4MB) to PA's [0, 4MB)
