@@ -1,11 +1,5 @@
 /*
- * arch/score/kernel/head.S
- *
- * Score Processor version.
- *
- * Copyright (C) 2009 Sunplus Core Technology Co., Ltd.
- *  Chen Liqin <liqin.chen@sunplusct.com>
- *  Lennox Wu <lennox.wu@sunplusct.com>
+ * arch/aqua/kernel/head.S
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

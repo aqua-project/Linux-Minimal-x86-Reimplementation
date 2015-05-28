@@ -1,11 +1,5 @@
 /*
- * arch/score/kernel/setup.c
- *
- * Score Processor version.
- *
- * Copyright (C) 2009 Sunplus Core Technology Co., Ltd.
- *  Chen Liqin <liqin.chen@sunplusct.com>
- *  Lennox Wu <lennox.wu@sunplusct.com>
+ * arch/aqua/kernel/setup.c
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,8 +36,56 @@ struct thread_info *__current_thread_info;
 struct screen_info screen_info;
 unsigned long kernelsp;
 
+void __init setup_memory(void)
+{
+	unsigned long start_pfn, bootmap_size;
+	unsigned long size = initrd_end - initrd_start;
+
+	start_pfn = PFN_UP(__pa(&_end));
+
+	min_low_pfn = PFN_UP(MEMORY_START);
+	max_low_pfn = PFN_UP(MEMORY_START + MEMORY_SIZE);
+	max_mapnr = max_low_pfn - min_low_pfn;
+
+	/* Initialize the boot-time allocator with low memory only. */
+	bootmap_size = init_bootmem_node(NODE_DATA(0), start_pfn,
+					 min_low_pfn, max_low_pfn);
+	memblock_add_node(PFN_PHYS(min_low_pfn),
+			  PFN_PHYS(max_low_pfn - min_low_pfn), 0);
+
+	free_bootmem(PFN_PHYS(start_pfn),
+		     (max_low_pfn - start_pfn) << PAGE_SHIFT);
+	memory_present(0, start_pfn, max_low_pfn);
+
+	/* Reserve space for the bootmem bitmap. */
+	reserve_bootmem(PFN_PHYS(start_pfn), bootmap_size, BOOTMEM_DEFAULT);
+
+	if (size == 0) {
+		printk(KERN_INFO "Initrd not found or empty");
+		goto disable;
+	}
+
+	if (__pa(initrd_end) > PFN_PHYS(max_low_pfn)) {
+		printk(KERN_ERR "Initrd extends beyond end of memory");
+		goto disable;
+	}
+
+	/* Reserve space for the initrd bitmap. */
+	reserve_bootmem(__pa(initrd_start), size, BOOTMEM_DEFAULT);
+	initrd_below_start_ok = 1;
+
+	pr_info("Initial ramdisk at: 0x%lx (%lu bytes)\n",
+		 initrd_start, size);
+	return;
+disable:
+	printk(KERN_CONT " - disabling initrd\n");
+	initrd_start = 0;
+	initrd_end = 0;
+}
+
 void __init setup_arch(char **cmdline_p)
 {
+        setup_memory();
 }
 
 static int show_cpuinfo(struct seq_file *m, void *v)
