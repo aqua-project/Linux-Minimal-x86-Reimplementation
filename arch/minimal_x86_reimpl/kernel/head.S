@@ -63,4 +63,11 @@ ENTRY(entry)
 
     movl    $start_kernel, %eax
     jmp     %eax
-    
+
+
+__PAGE_ALIGNED_BSS
+        .align PAGE_SIZE
+ENTRY(empty_zero_page)
+	.fill 4096,1,0
+ENTRY(swapper_pg_dir)
+	.fill 1024,4,0

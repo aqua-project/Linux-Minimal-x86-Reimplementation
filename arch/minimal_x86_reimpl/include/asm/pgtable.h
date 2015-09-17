@@ -9,7 +9,6 @@
 #include <asm/pgtable-bits.h>
 
 extern void load_pgd(unsigned long pg_dir);
-extern pte_t invalid_pte_table[PAGE_SIZE/sizeof(pte_t)];
 
 /* PGDIR_SHIFT determines what a third-level page table entry can map */
 #define PGDIR_SHIFT	22
@@ -42,24 +41,21 @@ extern pte_t invalid_pte_table[PAGE_SIZE/sizeof(pte_t)];
 	printk(KERN_ERR "%s:%d: bad pgd %08lx.\n", \
 		__FILE__, __LINE__, pgd_val(e))
 
-/*
- * Empty pgd/pmd entries point to the invalid_pte_table.
- */
 static inline int pmd_none(pmd_t pmd)
 {
-	return pmd_val(pmd) == (unsigned long) invalid_pte_table;
+	return pmd_val(pmd) == 0;
 }
 
 #define pmd_bad(pmd)		(pmd_val(pmd) & ~PAGE_MASK)
 
 static inline int pmd_present(pmd_t pmd)
 {
-	return pmd_val(pmd) != (unsigned long) invalid_pte_table;
+	return pmd_val(pmd) & (_PAGE_PRESENT | _PAGE_ACCESSED);
 }
 
 static inline void pmd_clear(pmd_t *pmdp)
 {
-	pmd_val(*pmdp) = ((unsigned long) invalid_pte_table);
+	*pmdp = __pmd(0);
 }
 
 #define pte_page(x)		pfn_to_page(pte_pfn(x))
@@ -120,15 +116,16 @@ static inline pte_t pte_mkspecial(pte_t pte) { return pte; }
 #define pte_none(pte)		(!(pte_val(pte) & ~_PAGE_GLOBAL))
 #define pte_present(pte)	(pte_val(pte) & _PAGE_PRESENT)
 
-#define PAGE_NONE	__pgprot(_PAGE_PRESENT | _PAGE_CACHE)
-#define PAGE_SHARED	__pgprot(_PAGE_PRESENT | _PAGE_READ | _PAGE_WRITE | \
-				_PAGE_CACHE)
-#define PAGE_COPY	__pgprot(_PAGE_PRESENT | _PAGE_READ | _PAGE_CACHE)
-#define PAGE_READONLY	__pgprot(_PAGE_PRESENT | _PAGE_READ | _PAGE_CACHE)
-#define PAGE_KERNEL	__pgprot(_PAGE_PRESENT | __READABLE | __WRITEABLE | \
-				_PAGE_GLOBAL | _PAGE_CACHE)
-#define PAGE_KERNEL_UNCACHED __pgprot(_PAGE_PRESENT | __READABLE | \
-				__WRITEABLE | _PAGE_GLOBAL & ~_PAGE_CACHE)
+#define PAGE_KERNEL       __pgprot(_PAGE_PRESENT | _PAGE_WRITABLE | _PAGE_ACCESSED | _PAGE_GLOBAL)
+#define PAGE_KERNEL_RO    __pgprot(_PAGE_PRESENT | _PAGE_ACCESSED | _PAGE_GLOBAL)
+#define PAGE_KERNEL_NC    __pgprot(_PAGE_PRESENT | _PAGE_ACCESSED | _PAGE_GLOBAL | _PAGE_PCD | _PAGE_PWT)
+#define PAGE_USER         __pgprot(_PAGE_PRESENT | _PAGE_WRITABLE | _PAGE_ACCESSED | _PAGE_USER)
+#define PAGE_USER_RO      __pgprot(_PAGE_PRESENT | _PAGE_ACCESSED | _PAGE_USER)
+
+#define PAGE_NONE         __pgprot(_PAGE_ACCESSED)
+#define PAGE_READONLY     PAGE_USER_RO
+#define PAGE_COPY         PAGE_USER_RO
+#define PAGE_SHARED       PAGE_USER
 
 #define __P000	PAGE_NONE
 #define __P001	PAGE_READONLY
@@ -148,13 +145,11 @@ static inline pte_t pte_mkspecial(pte_t pte) { return pte; }
 #define __S110	PAGE_SHARED
 #define __S111	PAGE_SHARED
 
-#define pgprot_noncached pgprot_noncached
-
 static inline pgprot_t pgprot_noncached(pgprot_t _prot)
 {
 	unsigned long prot = pgprot_val(_prot);
 
-	prot = (prot & ~_CACHE_MASK);
+	prot = (prot | _PAGE_PCD);
 
 	return __pgprot(prot);
 }
@@ -176,12 +171,12 @@ extern unsigned long zero_page_mask;
 
 static inline int pte_write(pte_t pte)
 {
-	return pte_val(pte) & _PAGE_WRITE;
+	return pte_val(pte) & _PAGE_WRITABLE;
 }
 
 static inline int pte_dirty(pte_t pte)
 {
-	return pte_val(pte) & _PAGE_MODIFIED;
+	return pte_val(pte) & _PAGE_DIRTY;
 }
 
 static inline int pte_young(pte_t pte)
@@ -193,44 +188,32 @@ static inline int pte_young(pte_t pte)
 
 static inline pte_t pte_wrprotect(pte_t pte)
 {
-	pte_val(pte) &= ~(_PAGE_WRITE | _PAGE_SILENT_WRITE);
-	return pte;
+	return __pte(pte_val(pte) & ~_PAGE_WRITABLE);
 }
 
 static inline pte_t pte_mkclean(pte_t pte)
 {
-	pte_val(pte) &= ~(_PAGE_MODIFIED|_PAGE_SILENT_WRITE);
-	return pte;
+	return __pte(pte_val(pte) & ~_PAGE_DIRTY);
 }
 
 static inline pte_t pte_mkold(pte_t pte)
 {
-	pte_val(pte) &= ~(_PAGE_ACCESSED|_PAGE_SILENT_READ);
-	return pte;
+	return __pte(pte_val(pte) & ~_PAGE_ACCESSED);
 }
 
 static inline pte_t pte_mkwrite(pte_t pte)
 {
-	pte_val(pte) |= _PAGE_WRITE;
-	if (pte_val(pte) & _PAGE_MODIFIED)
-		pte_val(pte) |= _PAGE_SILENT_WRITE;
-	return pte;
+	return __pte(pte_val(pte) | _PAGE_WRITABLE);
 }
 
 static inline pte_t pte_mkdirty(pte_t pte)
 {
-	pte_val(pte) |= _PAGE_MODIFIED;
-	if (pte_val(pte) & _PAGE_WRITE)
-		pte_val(pte) |= _PAGE_SILENT_WRITE;
-	return pte;
+	return __pte(pte_val(pte) | _PAGE_DIRTY);
 }
 
 static inline pte_t pte_mkyoung(pte_t pte)
 {
-	pte_val(pte) |= _PAGE_ACCESSED;
-	if (pte_val(pte) & _PAGE_READ)
-		pte_val(pte) |= _PAGE_SILENT_READ;
-	return pte;
+	return __pte(pte_val(pte) | _PAGE_ACCESSED);
 }
 
 #define set_pmd(pmdptr, pmdval)		\
@@ -239,7 +222,7 @@ static inline pte_t pte_mkyoung(pte_t pte)
 
 extern unsigned long pgd_current;
 extern pgd_t swapper_pg_dir[PTRS_PER_PGD];
-extern void paging_init(void);
+extern void pagetable_init(void);
 
 static inline pte_t pte_modify(pte_t pte, pgprot_t newprot)
 {

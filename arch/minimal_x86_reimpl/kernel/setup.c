@@ -36,7 +36,7 @@ struct thread_info *__current_thread_info;
 struct screen_info screen_info;
 unsigned long kernelsp;
 
-void __init setup_memory(void)
+void __init bootmem_init(void)
 {
 	unsigned long start_pfn, bootmap_size;
 	unsigned long size = initrd_end - initrd_start;
@@ -85,7 +85,8 @@ disable:
 
 void __init setup_arch(char **cmdline_p)
 {
-        setup_memory();
+        bootmem_init();
+        pagetable_init();
 }
 
 static int show_cpuinfo(struct seq_file *m, void *v)

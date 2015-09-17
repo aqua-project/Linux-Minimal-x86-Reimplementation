@@ -38,16 +38,42 @@
 #include <asm/sections.h>
 #include <asm/tlb.h>
 
-unsigned long empty_zero_page;
-EXPORT_SYMBOL_GPL(empty_zero_page);
-
 int page_is_ram(unsigned long pagenr)
 {
+        /* TODO: write this */
 	return 0;
 }
 
-void __init mem_init(void)
+void __init init_page(pgd_t pgd[], unsigned long va, unsigned long pa, pgprot_t prot)
 {
+	pmd_t *pmd;
+	pte_t *pte;
+
+	pmd = pmd_offset(pud_offset(pgd, va), va);
+	if (pmd_none(*pmd)) {
+		pte_t *page_table = (pte_t*) alloc_bootmem(PAGE_SIZE);
+		memset(page_table, 0, PAGE_SIZE);
+		set_pmd(pmd, __pmd(__pa(page_table) | pgprot_val(PAGE_USER)));
+	}
+	pte = pte_offset_kernel(pmd, va);
+	set_pte(pte, __pte(pa | pgprot_val(prot)));
+}
+
+void __init init_pages(pgd_t pgd[], unsigned long start_base, unsigned long end, unsigned long pa_base, pgprot_t prot)
+{
+	BUG_ON(!PAGE_ALIGNED(start_base));
+	BUG_ON(!PAGE_ALIGNED(end));
+
+	while (start_base <= end) {
+		init_page(pgd, start_base, pa_base, prot);
+		start_base += PAGE_SIZE;
+		pa_base += PAGE_SIZE;
+	}
+}
+
+void __init pagetable_init(void)
+{
+	init_pages(swapper_pg_dir, PAGE_OFFSET, __va(max_low_pfn << PAGE_SHIFT), 0, PAGE_KERNEL);
 }
 
 #ifdef CONFIG_BLK_DEV_INITRD
@@ -65,12 +91,9 @@ void __init_refok free_initmem(void)
 
 unsigned long pgd_current;
 
-#define __page_aligned(order) __attribute__((__aligned__(PAGE_SIZE<<order)))
-
-/*
- * gcc 3.3 and older have trouble determining that PTRS_PER_PGD and PGD_ORDER
- * are constants.  So we use the variants from asm-offset.h until that gcc
- * will officially be retired.
- */
-pgd_t swapper_pg_dir[PTRS_PER_PGD] __page_aligned(PTE_ORDER);
-pte_t invalid_pte_table[PTRS_PER_PTE] __page_aligned(PTE_ORDER);
+void __init mem_init(void)
+{
+	high_memory = (void *) __va(max_low_pfn << PAGE_SHIFT) + 1;
+	free_all_bootmem();
+	mem_init_print_info(NULL);
+}
