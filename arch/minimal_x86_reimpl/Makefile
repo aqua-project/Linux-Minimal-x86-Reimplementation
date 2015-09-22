@@ -26,11 +26,11 @@ KBUILD_CFLAGS_MODULE +=
 LDFLAGS += -m elf_i386
 LDFLAGS_vmlinux	+= -static -nostdlib
 
-head-y := arch/aqua/kernel/head.o
-libs-y += arch/aqua/lib/
-core-y += arch/aqua/kernel/ arch/aqua/mm/
+head-y := arch/minimal_x86_reimpl/kernel/head.o
+libs-y += arch/minimal_x86_reimpl/lib/
+core-y += arch/minimal_x86_reimpl/kernel/ arch/minimal_x86_reimpl/mm/
 
-boot := arch/aqua/boot
+boot := arch/minimal_x86_reimpl/boot
 
 vmlinux.bin: vmlinux
 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@

@@ -1,6 +1,6 @@
 menu "Machine selection"
 
-config SCORE
+config MINIMAL_X86_REIMPL
        def_bool y
        select GENERIC_IRQ_SHOW
        select GENERIC_IOMAP
