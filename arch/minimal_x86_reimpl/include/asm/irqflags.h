@@ -21,10 +21,12 @@ static inline void arch_local_irq_restore(unsigned long flags)
 
 static inline void arch_local_irq_enable(void)
 {
+  asm volatile("sti": : :"memory");
 }
 
 static inline void arch_local_irq_disable(void)
 {
+  asm volatile("cli": : :"memory");
 }
 
 static inline bool arch_irqs_disabled_flags(unsigned long flags)

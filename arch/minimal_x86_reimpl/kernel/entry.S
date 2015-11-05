@@ -125,3 +125,66 @@ illegal_syscall:
 
 ENTRY(sys_rt_sigreturn)
 	nop
+
+ENTRY(divide_error)
+	nop
+
+ENTRY(debug)
+	nop
+
+ENTRY(nmi)
+	nop
+
+ENTRY(int3)
+	nop
+
+ENTRY(overflow)
+	nop
+
+ENTRY(bounds)
+	nop
+
+ENTRY(invalid_op)
+	nop
+
+ENTRY(device_not_available)
+	nop
+
+ENTRY(double_fault)
+	nop
+
+ENTRY(coprocessor_segment_overrun)
+	nop
+
+ENTRY(invalid_TSS)
+	nop
+
+ENTRY(segment_not_present)
+	nop
+
+ENTRY(stack_segment)
+	nop
+
+ENTRY(general_protection)
+	nop
+
+ENTRY(page_fault)
+	nop
+
+ENTRY(spurious_interrupt_bug)
+	nop
+
+ENTRY(coprocessor_error)
+	nop
+
+ENTRY(alignment_check)
+	nop
+
+ENTRY(machine_check)
+	nop
+
+ENTRY(simd_coprocessor_error)
+	nop
+
+ENTRY(system_call)
+	nop

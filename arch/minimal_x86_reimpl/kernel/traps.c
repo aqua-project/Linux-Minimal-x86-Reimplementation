@@ -29,6 +29,9 @@
 #include <asm/cacheflush.h>
 #include <asm/irq.h>
 #include <asm/irq_regs.h>
+#include <asm/traps.h>
+
+struct gate_desc idt_table[NR_VECTORS];
 
 void show_stack(struct task_struct *task, unsigned long *sp)
 {
@@ -54,4 +57,55 @@ void __die_if_kernel(const char *str, struct pt_regs *regs,
 
 void __init trap_init(void)
 {
+  set_trap_gate(X86_TRAP_DE,  divide_error);
+  set_trap_gate(X86_TRAP_DB,  debug);
+  set_trap_gate(X86_TRAP_NMI, nmi);
+  set_trap_gate(X86_TRAP_BP,  int3);
+  set_trap_gate(X86_TRAP_OF, overflow);
+  set_trap_gate(X86_TRAP_BR, bounds);
+  set_trap_gate(X86_TRAP_UD, invalid_op);
+  set_trap_gate(X86_TRAP_NM, device_not_available);
+  //  set_trap_gate(X86_TRAP_DF, double_fault);
+  set_trap_gate(X86_TRAP_OLD_MF, coprocessor_segment_overrun);
+  set_trap_gate(X86_TRAP_TS, invalid_TSS);
+  set_trap_gate(X86_TRAP_NP, segment_not_present);
+  set_trap_gate(X86_TRAP_SS, stack_segment);
+  set_trap_gate(X86_TRAP_GP, general_protection);
+  set_trap_gate(X86_TRAP_PF, page_fault);
+  set_trap_gate(X86_TRAP_SPURIOUS, spurious_interrupt_bug);
+  set_trap_gate(X86_TRAP_MF, coprocessor_error);
+  set_trap_gate(X86_TRAP_AC, alignment_check);
+  set_trap_gate(X86_TRAP_MC, machine_check);
+  set_trap_gate(X86_TRAP_XF, simd_coprocessor_error);
+
+  set_trap_gate(SYSCALL_VECTOR, system_call);
+
+  lidt();
+}
+
+static void lidt(void){
+  volatile unsigned short pd[3];
+
+  pd[0] = sizeof(idt_table);
+  pd[1] = (unsigned short)((int)idt_table & 0xffff);
+  pd[2] = (unsigned short)((int)idt_table >> 16);
+
+  asm volatile("lidt (%0)" : : "r" (pd));
+}
+
+void set_gate(int gate, void *addr, unsigned short segment,
+              unsigned short flags){
+  struct gate_desc *gd = &(idt_table[gate]);
+  gd->offset0 = (unsigned short)((int)addr & 0xffff);
+  gd->offset1 = (unsigned short)((int)addr >> 16);
+  gd->segment = (unsigned short)segment; //kernel code segment
+  gd->flags   = (unsigned short)flags;
+}
+
+void set_trap_gate(int gate, void *addr){
+  set_gate(gate, addr, 0x60, 0x8f00);
+}
+
+void set_system_gate(int gate, void *addr){
+  set_gate(gate, addr, 0x60, 0xef00);
 }
