@@ -38,12 +38,6 @@
 #include <asm/sections.h>
 #include <asm/tlb.h>
 
-int page_is_ram(unsigned long pagenr)
-{
-        /* TODO: write this */
-	return 0;
-}
-
 void __init init_page(pgd_t pgd[], unsigned long va, unsigned long pa, pgprot_t prot)
 {
 	pmd_t *pmd;
