@@ -34,14 +34,6 @@ void flush_tlb_all(void)
 {
 }
 
-/*
- * If mm is currently active_mm, we can't really drop it. Instead,
- * we will get a new one for it.
- */
-static inline void
-drop_mmu_context(struct mm_struct *mm)
-{
-}
 
 void flush_tlb_mm(struct mm_struct *mm)
 {
