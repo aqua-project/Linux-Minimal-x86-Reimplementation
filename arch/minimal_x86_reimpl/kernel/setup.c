@@ -24,6 +24,7 @@
 #include <linux/mm.h>
 #include <linux/seq_file.h>
 #include <linux/screen_info.h>
+#include <linux/console.h>
 
 #include <asm-generic/sections.h>
 #include <asm/page.h>
@@ -85,8 +86,10 @@ disable:
 
 void __init setup_arch(char **cmdline_p)
 {
-        bootmem_init();
-        pagetable_init();
+	setup_early_printk(NULL);
+	bootmem_init();
+	pagetable_init();
+	early_printk("earlyprintk here. setup_arch finishs.\n");
 }
 
 static int show_cpuinfo(struct seq_file *m, void *v)

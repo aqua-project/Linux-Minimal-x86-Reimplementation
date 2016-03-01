@@ -99,7 +99,7 @@ source "drivers/Kconfig"
 
 source "fs/Kconfig"
 
-source "arch/score/Kconfig.debug"
+source "arch/minimal_x86_reimpl/Kconfig.debug"
 
 source "security/Kconfig"
 

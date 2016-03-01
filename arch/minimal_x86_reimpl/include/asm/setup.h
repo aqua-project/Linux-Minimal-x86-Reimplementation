@@ -7,7 +7,7 @@
 extern void pagetable_init(void);
 extern void pgd_init(unsigned long page);
 
-extern void setup_early_printk(void);
+extern void setup_early_printk(char *);
 extern void cpu_cache_init(void);
 extern void tlb_init(void);
 

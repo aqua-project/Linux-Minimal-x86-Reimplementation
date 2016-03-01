@@ -25,4 +25,10 @@ config RUNTIME_DEBUG
 	  include/asm-score/debug.h for debugging macros.
 	  If unsure, say N.
 
+config EARLY_PRINTK
+	bool "Early printk"
+	default y
+	help
+	  Write kernel log output directly into the serial port.
+
 endmenu
