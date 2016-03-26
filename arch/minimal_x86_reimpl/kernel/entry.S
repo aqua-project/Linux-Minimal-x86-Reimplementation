@@ -23,14 +23,51 @@
  * 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+
+#ifdef CONFIG_PREEMPT
+	.error "CONFIG_PREEMPT is not supported yet"
+#endif
+
 #include <linux/err.h>
 #include <linux/init.h>
 #include <linux/linkage.h>
-
+#include <asm/asm-offsets.h>
 #include <asm/asmmacro.h>
 #include <asm/thread_info.h>
 #include <asm/unistd.h>
+#include <asm/segment.h>
 
+.macro SAVE_ALL
+	cld
+	pushl %gs
+	pushl %fs
+	pushl %es
+	pushl %ds
+	pushl %eax
+	pushl %ebp
+	pushl %edi
+	pushl %esi
+	pushl %edx
+	pushl %ecx
+	pushl %ebx
+.endm
+
+.macro RESTORE_REGS
+	cld
+	popl %ebx
+	popl %ecx
+	popl %edx
+	popl %esi
+	popl %edi
+	popl %ebp
+	popl %eax
+	popl %ds
+	popl %es
+	popl %fs
+	popl %gs
+.endm
+
+/*
 __INIT
 ENTRY(debug_exception_vector)
 	nop
@@ -58,17 +95,10 @@ interrupt_exception:
 
 	.align	2
 #ifndef CONFIG_PREEMPT
-ENTRY(ret_from_exception)
-	nop
-
-ENTRY(ret_from_irq)
-	nop
 
 ENTRY(__ret_from_irq)
 	nop
 
-resume_userspace:
-	nop
 #endif
 
 #ifdef CONFIG_PREEMPT
@@ -77,6 +107,27 @@ resume_kernel:
 need_resched:
 	nop
 #endif
+*/
+
+ENTRY(ret_from_exception)
+ENTRY(ret_from_irq)
+	/* check the priviledge before exception */
+	movl PT_CS(%esp), %eax
+	andl $SEGMENT_RPL_MASK, %eax
+	cmpl $USER_RPL, %eax
+	jb restore_all
+
+resume_userspace:
+	cli
+	/* check pending work to do before iret */
+	GET_THREAD_INFO(%ebp)
+	movl TI_FLAGS(%ebp), %ecx
+	andl $_TIF_WORK_MASK, %ecx
+	jne work_pending
+
+restore_all:
+	RESTORE_REGS
+	iret
 
 ENTRY(ret_from_kernel_thread)
 	nop
@@ -87,25 +138,42 @@ ENTRY(ret_from_fork)
 ENTRY(syscall_exit)
 	nop
 
-ENTRY(restore_all)					# restore full frame
-	nop
-
 work_pending:
-	nop
+	testb $_TIF_NEED_RESCHED, %cl
+	jz work_notifysig
 work_resched:
-	nop
+	call schedule
+	cli
+	movl TI_FLAGS(%ebp), %ecx
+	andl $_TIF_WORK_MASK, %ecx
+	jz restore_all
+	testb $_TIF_NEED_RESCHED, %cl
+	jnz work_resched
 
 work_notifysig:
-	nop
-
-ENTRY(syscall_exit_work)
-	nop
+	movl %esp, %eax
+	sti
+	movb PT_CS(%esp), %bl
+	andb $SEGMENT_RPL_MASK, %bl
+	cmpb $USER_RPL, %bl
+	jb restore_all
+	pushl %ecx
+	pushl %eax
+	call do_notify_resume
+	popl %eax
+	popl %eax
+	jmp resume_userspace
 
 /*
  * task_struct *resume(task_struct *prev, task_struct *next,
  *			struct thread_info *next_ti)
- */
+*/
+
 ENTRY(resume)
+	nop
+
+/*
+ENTRY(syscall_exit_work)
 	nop
 
 ENTRY(handle_sys)
@@ -123,8 +191,11 @@ syscall_trace_entry:
 illegal_syscall:
 	nop
 
+*/
+
 ENTRY(sys_rt_sigreturn)
 	nop
+
 
 ENTRY(divide_error)
 	nop
@@ -169,7 +240,15 @@ ENTRY(general_protection)
 	nop
 
 ENTRY(page_fault)
-	nop
+	SAVE_ALL
+	movl %esp, %eax
+	pushl PT_ORIG_EAX(%eax)     # error code
+	pushl %eax                  # pt_regs pointer
+	movl $-1, PT_ORIG_EAX(%eax) # no syscall
+	call do_page_fault
+	popl %eax                   # pop arguments
+	popl %eax
+	jmp ret_from_exception
 
 ENTRY(spurious_interrupt_bug)
 	nop

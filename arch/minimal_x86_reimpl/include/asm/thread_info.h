@@ -88,6 +88,9 @@ extern struct thread_info *__current_thread_info;
 
 #define _TIF_WORK_MASK		(0x0000ffff)
 
+#define GET_THREAD_INFO(reg) \
+	movl __current_thread_info, reg;
+
 #endif /* __KERNEL__ */
 
 #endif /* _ASM_SCORE_THREAD_INFO_H */

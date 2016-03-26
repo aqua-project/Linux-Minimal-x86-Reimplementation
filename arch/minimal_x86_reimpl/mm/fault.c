@@ -40,7 +40,6 @@
  * and the problem, and then passes it off to one of the appropriate
  * routines.
  */
-asmlinkage void do_page_fault(struct pt_regs *regs, unsigned long write,
-				unsigned long address)
+asmlinkage void do_page_fault(struct pt_regs *regs, unsigned long error_code)
 {
 }

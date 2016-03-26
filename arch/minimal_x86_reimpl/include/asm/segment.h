@@ -10,6 +10,7 @@ typedef struct {
 #define KERNEL_DS	((mm_segment_t){0})
 #define USER_DS	KERNEL_DS
 
+
 # define get_ds()	(KERNEL_DS)
 # define get_fs()	(current_thread_info()->addr_limit)
 # define set_fs(x)	\
@@ -18,4 +19,9 @@ typedef struct {
 # define segment_eq(a, b)	((a).seg == (b).seg)
 
 # endif /* __ASSEMBLY__ */
+
+#define SEGMENT_RPL_MASK 0x3 // least 2 bits of segment register
+
+#define USER_RPL 0x3
+
 #endif /* _ASM_SCORE_SEGMENT_H */

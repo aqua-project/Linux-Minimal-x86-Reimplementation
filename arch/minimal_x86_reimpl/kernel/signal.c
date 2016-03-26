@@ -29,6 +29,7 @@
 #include <linux/unistd.h>
 #include <linux/uaccess.h>
 #include <linux/tracehook.h>
+#include <linux/linkage.h>
 
 #include <asm/cacheflush.h>
 #include <asm/syscalls.h>
@@ -41,4 +42,7 @@ struct rt_sigframe {
 	struct ucontext rs_uc;
 };
 
-
+asmlinkage void
+do_notify_resume(struct pt_regs *regs, __u32 thread_info_flags)
+{
+}
