@@ -155,7 +155,7 @@ static inline pgprot_t pgprot_noncached(pgprot_t _prot)
 }
 
 #define __swp_type(x)		((x).val & 0x1f)
-#define __swp_offset(x) 	((x).val >> 10)
+#define __swp_offset(x)		((x).val >> 10)
 #define __swp_entry(type, offset) ((swp_entry_t){(type) | ((offset) << 10)})
 
 extern unsigned long empty_zero_page;
@@ -229,6 +229,7 @@ static inline pte_t pte_mkyoung(pte_t pte)
 extern unsigned long pgd_current;
 extern pgd_t swapper_pg_dir[PTRS_PER_PGD];
 extern void pagetable_init(void);
+extern void paging_init(void);
 
 static inline pte_t pte_modify(pte_t pte, pgprot_t newprot)
 {

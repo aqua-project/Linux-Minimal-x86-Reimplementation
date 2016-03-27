@@ -67,6 +67,19 @@
 	popl %gs
 .endm
 
+
+.macro CALL_HANDLER handler
+	SAVE_ALL
+	movl %esp, %eax
+	pushl PT_ORIG_EAX(%eax)     # error code
+	pushl %eax                  # pt_regs pointer
+	movl $-1, PT_ORIG_EAX(%eax) # no syscall
+	call \handler
+	popl %eax                   # pop arguments
+	popl %eax
+	jmp ret_from_exception
+.endm
+
 /*
 __INIT
 ENTRY(debug_exception_vector)
@@ -109,60 +122,6 @@ need_resched:
 #endif
 */
 
-ENTRY(ret_from_exception)
-ENTRY(ret_from_irq)
-	/* check the priviledge before exception */
-	movl PT_CS(%esp), %eax
-	andl $SEGMENT_RPL_MASK, %eax
-	cmpl $USER_RPL, %eax
-	jb restore_all
-
-resume_userspace:
-	cli
-	/* check pending work to do before iret */
-	GET_THREAD_INFO(%ebp)
-	movl TI_FLAGS(%ebp), %ecx
-	andl $_TIF_WORK_MASK, %ecx
-	jne work_pending
-
-restore_all:
-	RESTORE_REGS
-	iret
-
-ENTRY(ret_from_kernel_thread)
-	nop
-
-ENTRY(ret_from_fork)
-	nop
-
-ENTRY(syscall_exit)
-	nop
-
-work_pending:
-	testb $_TIF_NEED_RESCHED, %cl
-	jz work_notifysig
-work_resched:
-	call schedule
-	cli
-	movl TI_FLAGS(%ebp), %ecx
-	andl $_TIF_WORK_MASK, %ecx
-	jz restore_all
-	testb $_TIF_NEED_RESCHED, %cl
-	jnz work_resched
-
-work_notifysig:
-	movl %esp, %eax
-	sti
-	movb PT_CS(%esp), %bl
-	andb $SEGMENT_RPL_MASK, %bl
-	cmpb $USER_RPL, %bl
-	jb restore_all
-	pushl %ecx
-	pushl %eax
-	call do_notify_resume
-	popl %eax
-	popl %eax
-	jmp resume_userspace
 
 /*
  * task_struct *resume(task_struct *prev, task_struct *next,
@@ -240,15 +199,7 @@ ENTRY(general_protection)
 	nop
 
 ENTRY(page_fault)
-	SAVE_ALL
-	movl %esp, %eax
-	pushl PT_ORIG_EAX(%eax)     # error code
-	pushl %eax                  # pt_regs pointer
-	movl $-1, PT_ORIG_EAX(%eax) # no syscall
-	call do_page_fault
-	popl %eax                   # pop arguments
-	popl %eax
-	jmp ret_from_exception
+	CALL_HANDLER do_page_fault
 
 ENTRY(spurious_interrupt_bug)
 	nop
@@ -267,3 +218,60 @@ ENTRY(simd_coprocessor_error)
 
 ENTRY(system_call)
 	nop
+
+
+
+ENTRY(ret_from_exception)
+ENTRY(ret_from_irq)
+	/* check the priviledge before exception */
+	movl PT_CS(%esp), %eax
+	andl $SEGMENT_RPL_MASK, %eax
+	cmpl $USER_RPL, %eax
+	jb restore_all
+
+resume_userspace:
+	cli
+	/* check pending work to do before iret */
+	GET_THREAD_INFO(%ebp)
+	movl TI_FLAGS(%ebp), %ecx
+	andl $_TIF_WORK_MASK, %ecx
+	jne work_pending
+
+restore_all:
+	RESTORE_REGS
+	iret
+
+ENTRY(ret_from_kernel_thread)
+	nop
+
+ENTRY(ret_from_fork)
+	nop
+
+ENTRY(syscall_exit)
+	nop
+
+work_pending:
+	testb $_TIF_NEED_RESCHED, %cl
+	jz work_notifysig
+work_resched:
+	call schedule
+	cli
+	movl TI_FLAGS(%ebp), %ecx
+	andl $_TIF_WORK_MASK, %ecx
+	jz restore_all
+	testb $_TIF_NEED_RESCHED, %cl
+	jnz work_resched
+
+work_notifysig:
+	movl %esp, %eax
+	sti
+	movb PT_CS(%esp), %bl
+	andb $SEGMENT_RPL_MASK, %bl
+	cmpb $USER_RPL, %bl
+	jb restore_all
+	pushl %ecx
+	pushl %eax
+	call do_notify_resume
+	popl %eax
+	popl %eax
+	jmp resume_userspace

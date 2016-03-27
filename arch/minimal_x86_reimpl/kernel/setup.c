@@ -88,7 +88,7 @@ void __init setup_arch(char **cmdline_p)
 {
 	setup_early_printk(NULL);
 	bootmem_init();
-	pagetable_init();
+	paging_init();
 	early_printk("earlyprintk here. setup_arch finishs.\n");
 }
 

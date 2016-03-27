@@ -70,6 +70,14 @@ void __init pagetable_init(void)
 	init_pages(swapper_pg_dir, PAGE_OFFSET, __va(max_low_pfn << PAGE_SHIFT), 0, PAGE_KERNEL);
 }
 
+void __init paging_init(void)
+{
+	unsigned long max_zone_pfns[MAX_NR_ZONES];
+	pagetable_init();
+	max_zone_pfns[ZONE_NORMAL] = max_low_pfn;
+	free_area_init_nodes(max_zone_pfns);
+}
+
 #ifdef CONFIG_BLK_DEV_INITRD
 void free_initrd_mem(unsigned long start, unsigned long end)
 {
