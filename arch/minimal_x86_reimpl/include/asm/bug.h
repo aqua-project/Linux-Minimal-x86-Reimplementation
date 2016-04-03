@@ -14,4 +14,6 @@ extern void __die_if_kernel(const char *, struct pt_regs *, const char *,
 #define die_if_kernel(msg, regs)					\
 	__die_if_kernel(msg, regs, __FILE__ ":", __func__, __LINE__)
 
+#define not_implemented() die("Not implemented", NULL)
+
 #endif /* _ASM_SCORE_BUG_H */

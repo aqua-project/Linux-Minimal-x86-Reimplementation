@@ -157,69 +157,89 @@ ENTRY(sys_rt_sigreturn)
 
 
 ENTRY(divide_error)
-	nop
+	CALL_HANDLER do_divide_error
 
 ENTRY(debug)
-	nop
+	CALL_HANDLER do_debug
 
 ENTRY(nmi)
-	nop
+	CALL_HANDLER do_nmi
 
 ENTRY(int3)
-	nop
+	CALL_HANDLER do_int3
 
 ENTRY(overflow)
-	nop
+	CALL_HANDLER do_overflow
 
 ENTRY(bounds)
-	nop
+	CALL_HANDLER do_bounds
 
 ENTRY(invalid_op)
-	nop
+	CALL_HANDLER do_invalid_op
 
 ENTRY(device_not_available)
-	nop
+	CALL_HANDLER do_device_not_available
 
 ENTRY(double_fault)
-	nop
+	CALL_HANDLER do_double_fault
 
 ENTRY(coprocessor_segment_overrun)
-	nop
+	CALL_HANDLER do_coprocessor_segment_overrun
 
 ENTRY(invalid_TSS)
-	nop
+	CALL_HANDLER do_invalid_TSS
 
 ENTRY(segment_not_present)
-	nop
+	CALL_HANDLER do_segment_not_present
 
 ENTRY(stack_segment)
-	nop
+	CALL_HANDLER do_stack_segment
 
 ENTRY(general_protection)
-	nop
+	CALL_HANDLER do_general_protection
 
 ENTRY(page_fault)
 	CALL_HANDLER do_page_fault
 
 ENTRY(spurious_interrupt_bug)
-	nop
+	CALL_HANDLER do_spurious_interrupt_bug
 
 ENTRY(coprocessor_error)
-	nop
+	CALL_HANDLER do_coprocessor_error
 
 ENTRY(alignment_check)
-	nop
+	CALL_HANDLER do_alignment_check
 
 ENTRY(machine_check)
-	nop
+	CALL_HANDLER do_machine_check
 
 ENTRY(simd_coprocessor_error)
-	nop
+	CALL_HANDLER do_simd_coprocessor_error
 
 ENTRY(system_call)
-	nop
+	pushl %eax
+	SAVE_ALL
+	pushl %eax
+	cmpl $(__NR_syscalls), %eax
+	jae syscall_badsys
+	call *sys_call_table(,%eax,4)
+syscall_after_call:
+	addl $4, %esp
+	movl %eax, PT_EAX(%esp)
+syscall_exit:
+	cli
+	GET_THREAD_INFO(%ebp)
+	movl TI_FLAGS(%ebp), %ecx
+	andl $_TIF_WORK_MASK, %ecx
+	jnz work_pending
+restore_all:
+	RESTORE_REGS
+	addl $4, %esp # remove error code
+	iret
 
-
+syscall_badsys:
+	movl $-ENOSYS, %eax
+	jmp syscall_after_call
 
 ENTRY(ret_from_exception)
 ENTRY(ret_from_irq)
@@ -235,11 +255,8 @@ resume_userspace:
 	GET_THREAD_INFO(%ebp)
 	movl TI_FLAGS(%ebp), %ecx
 	andl $_TIF_WORK_MASK, %ecx
-	jne work_pending
-
-restore_all:
-	RESTORE_REGS
-	iret
+	jnz work_pending
+	jmp restore_all
 
 ENTRY(ret_from_kernel_thread)
 	nop
@@ -247,8 +264,6 @@ ENTRY(ret_from_kernel_thread)
 ENTRY(ret_from_fork)
 	nop
 
-ENTRY(syscall_exit)
-	nop
 
 work_pending:
 	testb $_TIF_NEED_RESCHED, %cl
@@ -272,6 +287,5 @@ work_notifysig:
 	pushl %ecx
 	pushl %eax
 	call do_notify_resume
-	popl %eax
-	popl %eax
+	addl $8, %esp	# remove arguments
 	jmp resume_userspace

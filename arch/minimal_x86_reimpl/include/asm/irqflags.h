@@ -7,16 +7,12 @@
 
 static inline unsigned long arch_local_save_flags(void)
 {
-    return 0;
-}
-
-static inline unsigned long arch_local_irq_save(void)
-{
-    return 0;
-}
-
-static inline void arch_local_irq_restore(unsigned long flags)
-{
+	unsigned long flags;
+	asm volatile("pushf; pop %0"
+		     : "=rm"(flags)
+		     :
+		     : "memory");
+	return flags;
 }
 
 static inline void arch_local_irq_enable(void)
@@ -27,6 +23,21 @@ static inline void arch_local_irq_enable(void)
 static inline void arch_local_irq_disable(void)
 {
   asm volatile("cli": : :"memory");
+}
+
+static inline unsigned long arch_local_irq_save(void)
+{
+	unsigned long flags = arch_local_save_flags();
+	arch_local_irq_disable();
+	return flags;
+}
+
+static inline void arch_local_irq_restore(unsigned long flags)
+{
+	asm volatile("push %0; popf"
+		     :
+		     : "g"(flags)
+		     : "memory", "cc");
 }
 
 static inline bool arch_irqs_disabled_flags(unsigned long flags)

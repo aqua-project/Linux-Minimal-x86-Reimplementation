@@ -35,24 +35,30 @@ struct gate_desc idt_table[NR_VECTORS];
 
 void show_stack(struct task_struct *task, unsigned long *sp)
 {
+	not_implemented();
 }
 
 void show_regs(struct pt_regs *regs)
 {
+	not_implemented();
 }
 
 static void show_registers(struct pt_regs *regs)
 {
+	not_implemented();
 }
 
 void __die(const char *str, struct pt_regs *regs, const char *file,
 	const char *func, unsigned long line)
 {
+	early_printk("%s\n%s() in %s at %d", str, func, file, line);
+	while (1) {};
 }
 
 void __die_if_kernel(const char *str, struct pt_regs *regs,
 		const char *file, const char *func, unsigned long line)
 {
+	__die(str, regs, file, func, line);
 }
 
 void __init trap_init(void)
@@ -108,4 +114,81 @@ void set_trap_gate(int gate, void *addr){
 
 void set_system_gate(int gate, void *addr){
 	set_gate(gate, addr, 0x60, 0xef00);
+}
+
+asmlinkage void do_divide_error(struct pt_regs *regs, unsigned long error_code)
+{
+	not_implemented();
+}
+asmlinkage void do_debug(struct pt_regs *regs, unsigned long error_code)
+{
+	not_implemented();
+}
+asmlinkage void do_nmi(struct pt_regs *regs, unsigned long error_code)
+{
+	not_implemented();
+}
+asmlinkage void do_int3(struct pt_regs *regs, unsigned long error_code)
+{
+	not_implemented();
+}
+asmlinkage void do_overflow(struct pt_regs *regs, unsigned long error_code)
+{
+	not_implemented();
+}
+asmlinkage void do_bounds(struct pt_regs *regs, unsigned long error_code)
+{
+	not_implemented();
+}
+asmlinkage void do_invalid_op(struct pt_regs *regs, unsigned long error_code)
+{
+	not_implemented();
+}
+asmlinkage void do_device_not_available(struct pt_regs *regs, unsigned long error_code)
+{
+	not_implemented();
+}
+asmlinkage void do_double_fault(struct pt_regs *regs, unsigned long error_code)
+{
+	not_implemented();
+}
+asmlinkage void do_coprocessor_segment_overrun(struct pt_regs *regs, unsigned long error_code)
+{
+	not_implemented();
+}
+asmlinkage void do_invalid_TSS(struct pt_regs *regs, unsigned long error_code)
+{
+	not_implemented();
+}
+asmlinkage void do_segment_not_present(struct pt_regs *regs, unsigned long error_code)
+{
+	not_implemented();
+}
+asmlinkage void do_stack_segment(struct pt_regs *regs, unsigned long error_code)
+{
+	not_implemented();
+}
+asmlinkage void do_general_protection(struct pt_regs *regs, unsigned long error_code)
+{
+	not_implemented();
+}
+asmlinkage void do_spurious_interrupt_bug(struct pt_regs *regs, unsigned long error_code)
+{
+	not_implemented();
+}
+asmlinkage void do_coprocessor_error(struct pt_regs *regs, unsigned long error_code)
+{
+	not_implemented();
+}
+asmlinkage void do_alignment_check(struct pt_regs *regs, unsigned long error_code)
+{
+	not_implemented();
+}
+asmlinkage void do_machine_check(struct pt_regs *regs, unsigned long error_code)
+{
+	not_implemented();
+}
+asmlinkage void do_simd_coprocessor_error(struct pt_regs *regs, unsigned long error_code)
+{
+	not_implemented();
 }

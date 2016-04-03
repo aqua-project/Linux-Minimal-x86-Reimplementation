@@ -42,4 +42,5 @@
  */
 asmlinkage void do_page_fault(struct pt_regs *regs, unsigned long error_code)
 {
+	not_implemented();
 }
